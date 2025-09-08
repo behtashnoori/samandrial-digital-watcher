@@ -1,0 +1,6 @@
+Flask
+SQLAlchemy
+Flask-Migrate
+openpyxl
+numpy
+faiss-cpu
