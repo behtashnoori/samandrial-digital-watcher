@@ -24,6 +24,10 @@ dist-ssr
 *.sw?
 
 # Backend
-backend/instance/*.db
+backend/instance/
 backend/storage/
 backend/rag_index/
+
+# Environment
+.env
+backend/.env
