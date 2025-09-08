@@ -98,6 +98,7 @@ class BudgetAnnual(db.Model):
     scenario: Mapped[str]
     version: Mapped[str]
     snapshot_id: Mapped[int] = mapped_column(ForeignKey('budget_snapshot.id'))
+    notes: Mapped[str | None] = mapped_column()
 
 
 class BudgetSnapshot(db.Model):

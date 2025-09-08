@@ -118,6 +118,7 @@ def _parse_budget(file) -> tuple[list[dict[str, str]], list[RowError]]:
                 "annual_qty": r[5] if r and len(r) > 5 else None,
                 "annual_fin": r[6] if r and len(r) > 6 else None,
                 "currency": r[7] if r and len(r) > 7 and r[7] is not None else "",
+                "notes": r[8] if r and len(r) > 8 else None,
             }
             row_errors = [f"missing {col}" for col in required if not data.get(col)]
             for field in ["year", "unit_id"]:
@@ -504,11 +505,13 @@ def import_budget() -> Response:
         entry = BudgetAnnual.query.filter_by(**key).first()
         annual_qty = float(row["annual_qty"]) if row.get("annual_qty") else None
         annual_fin = float(row["annual_fin"]) if row.get("annual_fin") else None
+        notes = row.get("notes") or None
         if entry:
             entry.annual_qty = annual_qty
             entry.annual_fin = annual_fin
             entry.currency = row["currency"]
             entry.snapshot_id = snapshots[(y, sc)]
+            entry.notes = notes
             updated += 1
             action = "update"
         else:
@@ -518,6 +521,7 @@ def import_budget() -> Response:
                 annual_fin=annual_fin,
                 currency=row["currency"],
                 snapshot_id=snapshots[(y, sc)],
+                notes=notes,
             )
             db.session.add(entry)
             created += 1
