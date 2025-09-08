@@ -19,4 +19,5 @@ from . import (
     auth,
     notify,
     budget,
+    dq,
 )  # noqa: F401

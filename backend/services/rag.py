@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import faiss
 import numpy as np
@@ -51,9 +51,58 @@ def _embed(text: str) -> np.ndarray:
     return vec
 
 
-def index_response(resp_text: str, meta_info: Dict[str, Any]) -> None:
+def _extract_attachment_text(path: str) -> str:
+    ext = os.path.splitext(path)[1].lower()
+    try:
+        if ext in {".txt", ".csv"}:
+            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                return f.read()
+        if ext in {".xlsx", ".xlsm"}:
+            from openpyxl import load_workbook
+
+            wb = load_workbook(path, data_only=True)
+            text: List[str] = []
+            for ws in wb.worksheets:
+                for row in ws.iter_rows(values_only=True):
+                    for cell in row:
+                        if cell is not None:
+                            text.append(str(cell))
+            return "\n".join(text)
+        if ext == ".pdf":
+            try:
+                import PyPDF2
+
+                text = []
+                with open(path, "rb") as f:
+                    reader = PyPDF2.PdfReader(f)
+                    for page in reader.pages:
+                        text.append(page.extract_text() or "")
+                return "\n".join(text)
+            except Exception:
+                pass
+        if ext in {".png", ".jpg", ".jpeg"}:
+            try:
+                from PIL import Image
+                import pytesseract
+
+                img = Image.open(path)
+                return pytesseract.image_to_string(img)
+            except Exception:
+                pass
+    except Exception:
+        pass
+    return ""
+
+
+def index_response(resp_text: str, meta_info: Dict[str, Any], attachments: Optional[List[str]] = None) -> None:
     index, meta = _load_index()
-    chunks = [resp_text[i : i + 200] for i in range(0, len(resp_text), 200)]
+    full_text = resp_text
+    if attachments:
+        for p in attachments:
+            extracted = _extract_attachment_text(p)
+            if extracted:
+                full_text += "\n" + extracted
+    chunks = [full_text[i : i + 200] for i in range(0, len(full_text), 200)]
     for chunk in chunks:
         vec = _embed(chunk)
         index.add(np.expand_dims(vec, axis=0))

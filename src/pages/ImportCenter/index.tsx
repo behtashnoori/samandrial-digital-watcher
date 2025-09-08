@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { apiFetch } from "@/lib/api/client";
 import ImportCard from "./ImportCard";
+import DQCard from "./DQCard";
 
 interface DiffItem {
   service_code: string;
@@ -19,10 +20,16 @@ interface DiffRes {
   triggers?: ImpactedTrigger[];
 }
 
+interface Issue {
+  level: string;
+  message: string;
+}
+
 const ImportCenter = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const [budgetDiff, setBudgetDiff] = useState<DiffRes | null>(null);
+  const [dq, setDq] = useState<Issue[] | null>(null);
 
   const compute = async () => {
     setLoading(true);
@@ -42,6 +49,7 @@ const ImportCenter = () => {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">مرکز ورود داده</h1>
+      <DQCard onResult={setDq} />
       <ImportCard
         title="خدمات"
         endpoint="/api/import/services"
@@ -81,7 +89,10 @@ const ImportCenter = () => {
         template="/api/templates/seasonality.xlsx"
       />
       <div>
-        <Button onClick={compute} disabled={loading}>
+        <Button
+          onClick={compute}
+          disabled={loading || !dq || dq.some((i) => i.level === "error")}
+        >
           {loading ? "در حال محاسبه..." : "محاسبه بودجه روزانه"}
         </Button>
       </div>

@@ -29,6 +29,7 @@ interface SearchHit {
   period?: string;
   severity?: string;
   head_id?: number | null;
+  response_id?: number;
 }
 
 const Records = () => {
@@ -68,7 +69,11 @@ const Records = () => {
           />
           <ul className="space-y-4">
             {filtered?.map((r) => (
-              <li key={r.id} className="border rounded p-3 space-y-2">
+              <li
+                key={r.id}
+                id={`r-${r.id}`}
+                className="border rounded p-3 space-y-2"
+              >
                 <div className="text-xs text-gray-600">{r.submitted_at}</div>
                 <div>{r.free_text}</div>
                 {r.actions && r.actions.length > 0 && (
@@ -106,6 +111,14 @@ const Records = () => {
                 <div className="text-xs text-gray-600">
                   {r.service_code} - {r.period}
                 </div>
+                {r.response_id && (
+                  <a
+                    href={`/records#r-${r.response_id}`}
+                    className="text-blue-600 text-sm"
+                  >
+                    مشاهده
+                  </a>
+                )}
               </li>
             ))}
           </ul>

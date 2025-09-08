@@ -181,9 +181,15 @@ export const handlers = [
         text: r.free_text,
         service_code: "SC001",
         period: r.submitted_at.slice(0, 10),
+        response_id: r.id,
       }));
     return HttpResponse.json(hits);
   }),
+  http.post("/api/dq/run", () =>
+    HttpResponse.json([
+      { level: "success", message: "هیچ مشکلی یافت نشد" },
+    ]),
+  ),
   http.post("/api/import/services", ({ request }) => {
     const mode = new URL(request.url).searchParams.get("mode");
     if (mode === "dry-run") {

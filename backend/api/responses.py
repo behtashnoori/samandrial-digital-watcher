@@ -64,14 +64,22 @@ def create_response() -> tuple[dict, int]:
 
     trig = TriggerEvent.query.get(trigger_id)
     if trig:
+        parts = [free_text]
+        if data.get('sample_ref'):
+            parts.append(data['sample_ref'])
+        if actions:
+            for a in actions:
+                parts.append(f"{a['text']} {a['owner']} {a['due_date']}")
+        full_text = "\n".join(parts)
         rag_service.index_response(
-            free_text,
+            full_text,
             {
                 'service_code': trig.service_code,
                 'unit_id': trig.unit_id,
                 'period': trig.date.isoformat(),
                 'severity': trig.severity,
                 'head_id': trig.assigned_head_id,
+                'response_id': resp.id,
             },
         )
 
@@ -147,6 +155,21 @@ def upload_attachment(response_id: int):
         )
     )
     db.session.commit()
+    resp = Response.query.get(response_id)
+    trig = TriggerEvent.query.get(resp.trigger_id) if resp else None
+    if trig:
+        rag_service.index_response(
+            "",
+            {
+                'service_code': trig.service_code,
+                'unit_id': trig.unit_id,
+                'period': trig.date.isoformat(),
+                'severity': trig.severity,
+                'head_id': trig.assigned_head_id,
+                'response_id': resp.id if resp else None,
+            },
+            attachments=[path],
+        )
     return (
         jsonify({'id': attachment.id, 'uri': attachment.uri, 'file_name': filename}),
         201,
