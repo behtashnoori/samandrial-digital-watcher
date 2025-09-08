@@ -1,0 +1,10 @@
+Flask
+SQLAlchemy
+Flask-Migrate
+openpyxl
+numpy
+faiss-cpu
+APScheduler
+bcrypt
+Flask-Limiter
+python-magic
