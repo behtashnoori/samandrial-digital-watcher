@@ -251,3 +251,15 @@ class RecomputeJob(db.Model):
     job: Mapped[str]
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     done: Mapped[bool] = mapped_column(default=False)
+
+
+class OneTimeToken(db.Model):
+    __tablename__ = 'one_time_token'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    token: Mapped[str] = mapped_column(unique=True)
+    trigger_id: Mapped[int] = mapped_column(ForeignKey('trigger_event.id'))
+    head_id: Mapped[int] = mapped_column(ForeignKey('head.id'))
+    expires_at: Mapped[datetime]
+    used_at: Mapped[datetime | None]
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)

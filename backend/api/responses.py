@@ -9,7 +9,7 @@ from flask import current_app, jsonify, request
 from werkzeug.utils import secure_filename
 
 from ..app import db
-from ..models import Attachment, AuditLog, Response, TriggerEvent
+from ..models import Attachment, AuditLog, Response, TriggerEvent, OneTimeToken
 from ..services import rag as rag_service
 from . import api_bp
 
@@ -24,6 +24,13 @@ def create_response() -> tuple[dict, int]:
         return jsonify({'message': 'free_text too long'}), 400
 
     trigger_id = data.get('trigger_id')
+    token_str = data.get('token')
+    if trigger_id is None and token_str:
+        ott = OneTimeToken.query.filter_by(token=token_str).first()
+        if not ott or ott.used_at or ott.expires_at < datetime.utcnow():
+            return jsonify({'message': 'invalid token'}), 400
+        trigger_id = ott.trigger_id
+        ott.used_at = datetime.utcnow()
     if trigger_id is None:
         return jsonify({'message': 'trigger_id required'}), 400
 

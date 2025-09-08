@@ -85,6 +85,7 @@ const App = () => (
               />
             </Route>
             <Route path="/login" element={<Login />} />
+            <Route path="/token/:token" element={<RecordForm />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

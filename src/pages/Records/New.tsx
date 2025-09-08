@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
@@ -35,11 +35,19 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const fetchTrigger = (id: string) => apiFetch<Trigger>(`/api/triggers/${id}`);
+const fetchToken = (tok: string) => apiFetch<{ trigger_id: number }>(`/api/token/${tok}`);
 
 const RecordForm = () => {
   const [params] = useSearchParams();
+  const { token } = useParams();
   const navigate = useNavigate();
-  const triggerId = params.get("triggerId") ?? "";
+  const triggerIdParam = params.get("triggerId") ?? "";
+  const { data: tokenInfo } = useQuery({
+    queryKey: ["token", token],
+    queryFn: () => fetchToken(token!),
+    enabled: !!token,
+  });
+  const triggerId = token ? String(tokenInfo?.trigger_id ?? "") : triggerIdParam;
   const { data: trigger } = useQuery({
     queryKey: ["trigger", triggerId],
     queryFn: () => fetchTrigger(triggerId),
@@ -58,7 +66,8 @@ const RecordForm = () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        trigger_id: Number(triggerId),
+        trigger_id: token ? undefined : Number(triggerId),
+        token: token,
         free_text: values.free_text,
         sample_ref: values.sample_ref,
         actions: values.actions,
@@ -72,7 +81,7 @@ const RecordForm = () => {
         body: fd,
       });
     }
-    navigate("/records");
+    navigate(token ? "/" : "/records");
   };
 
   return (

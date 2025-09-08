@@ -16,6 +16,7 @@ const triggers = [
     head_name: "مدیر اول",
     assigned_head_id: 1,
     updated: false,
+    status: "open",
   },
   {
     id: 2,
@@ -32,6 +33,7 @@ const triggers = [
     head_name: "مدیر دوم",
     assigned_head_id: 2,
     updated: false,
+    status: "reminded",
   },
 ];
 
@@ -89,6 +91,28 @@ export const handlers = [
     const t = triggers.find((tr) => tr.id === Number(params.id));
     return t ? HttpResponse.json(t) : HttpResponse.json(null, { status: 404 });
   }),
+  http.get("/api/triggers/impacted", () =>
+    HttpResponse.json(triggers.filter((t) => t.updated)),
+  ),
+  http.post("/api/notify/trigger/:id", ({ params }) =>
+    HttpResponse.json({ url: `/token/mock-${params.id}` }),
+  ),
+  http.get("/api/token/:token", ({ params }) =>
+    HttpResponse.json({ trigger_id: Number(params.token.split("-")[1] || 1) }),
+  ),
+  http.get("/api/budget/snapshots", () =>
+    HttpResponse.json([
+      { id: 1, year: 1404, scenario: "base", status: "published", created_at: "2024-01-01" },
+      { id: 2, year: 1404, scenario: "base", status: "archived", created_at: "2023-12-01" },
+    ]),
+  ),
+  http.get("/api/budget/diff", () =>
+    HttpResponse.json({
+      added: [{ service_code: "S3" }],
+      removed: [],
+      changed: [{ service_code: "S1" }],
+    }),
+  ),
   http.post("/api/compute/budget-daily", () => {
     triggers.forEach((t) => {
       t.updated = true;

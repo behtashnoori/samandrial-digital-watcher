@@ -29,6 +29,7 @@ def create_app() -> Flask:
     app.register_blueprint(api_bp, url_prefix='/api')
 
     from . import models  # noqa: F401
+    from .services.notify import scheduler  # noqa: F401
 
     with app.app_context():
         event.listen(db.engine, 'connect', lambda conn, _: conn.execute('PRAGMA journal_mode=WAL'))

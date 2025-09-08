@@ -112,3 +112,18 @@ def get_trigger(trigger_id: int):
         ),
         200,
     )
+
+
+@api_bp.get('/triggers/impacted')
+def triggers_impacted():
+    snapshot = request.args.get('snapshot', type=int)
+    rows = TriggerEvent.query.filter_by(updated_by_new_budget=True).all()
+    return jsonify([
+        {
+            'id': t.id,
+            'service_code': t.service_code,
+            'unit_id': t.unit_id,
+            'severity': t.severity,
+        }
+        for t in rows
+    ])

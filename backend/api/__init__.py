@@ -17,4 +17,6 @@ from . import (
     dashboard,
     rag,
     auth,
+    notify,
+    budget,
 )  # noqa: F401

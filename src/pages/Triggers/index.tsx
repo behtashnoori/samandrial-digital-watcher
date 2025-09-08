@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Trigger {
   id: number;
@@ -18,6 +19,7 @@ interface Trigger {
   head_name: string;
   assigned_head_id: number;
   updated?: boolean;
+  status?: string;
 }
 
 const fetchTriggers = () => apiFetch<Trigger[]>("/api/triggers");
@@ -25,6 +27,7 @@ const fetchTriggers = () => apiFetch<Trigger[]>("/api/triggers");
 const Triggers = () => {
   const { data } = useQuery({ queryKey: ["triggers"], queryFn: fetchTriggers });
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [filter, setFilter] = useState("");
 
   const filtered = data?.filter(
@@ -83,20 +86,38 @@ const Triggers = () => {
               <td className="p-2">{t.severity}</td>
               <td className="p-2">{t.due_at}</td>
               <td className="p-2">{t.head_name}</td>
-              <td className="p-2">
+              <td className="p-2 space-x-1 rtl:space-x-reverse">
                 {t.updated && (
                   <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
                     به‌روزرسانی‌شده
                   </span>
                 )}
+                {t.status === "reminded" && (
+                  <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
+                    یادآوری شده
+                  </span>
+                )}
               </td>
-              <td className="p-2">
+              <td className="p-2 space-x-2 rtl:space-x-reverse">
                 <Link
                   className="text-blue-600 underline"
                   to={`/records/new?triggerId=${t.id}`}
                 >
                   ارسال فرم سؤال
                 </Link>
+                <button
+                  className="text-blue-600 underline"
+                  onClick={async () => {
+                    const res = await apiFetch<{ url: string }>(
+                      `/api/notify/trigger/${t.id}`,
+                      { method: "POST" },
+                    );
+                    await navigator.clipboard.writeText(res.url);
+                    toast({ description: "لینک کپی شد" });
+                  }}
+                >
+                  دریافت لینک
+                </button>
               </td>
             </tr>
           ))}

@@ -482,11 +482,15 @@ def import_budget() -> Response:
     if errors:
         return jsonify({"errors": errors}), 400
     snapshots: dict[tuple[int, str], int] = {}
+    prev_snaps: dict[tuple[int, str], int | None] = {}
     # create snapshot per (year, scenario)
     for y, sc in {(int(r["year"]), r["scenario"]) for r in rows}:
-        BudgetSnapshot.query.filter_by(year=y, scenario=sc, status="published").update(
-            {"status": "archived"}
-        )
+        prev = BudgetSnapshot.query.filter_by(year=y, scenario=sc, status="published").first()
+        if prev:
+            prev.status = "archived"
+            prev_snaps[(y, sc)] = prev.id
+        else:
+            prev_snaps[(y, sc)] = None
         snap = BudgetSnapshot(year=y, scenario=sc, status="published")
         db.session.add(snap)
         db.session.flush()
@@ -541,7 +545,16 @@ def import_budget() -> Response:
     from ..services.recompute import run_recompute_jobs
 
     run_recompute_jobs(db.session)
-    return jsonify({"created": created, "updated": updated, "deactivated": 0})
+    first_key = next(iter(snapshots))
+    return jsonify(
+        {
+            "created": created,
+            "updated": updated,
+            "deactivated": 0,
+            "snapshot": snapshots[first_key],
+            "prev_snapshot": prev_snaps.get(first_key),
+        }
+    )
 
 
 @api_bp.post("/import/ops-actual")

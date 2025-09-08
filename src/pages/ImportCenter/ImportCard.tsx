@@ -22,9 +22,9 @@ interface Props {
   template: string;
   allowDeactivate?: boolean;
   successMessage?: string;
+  onCommitted?: (res: Record<string, unknown>) => void;
 }
-
-const ImportCard = ({ title, endpoint, template, allowDeactivate, successMessage }: Props) => {
+const ImportCard = ({ title, endpoint, template, allowDeactivate, successMessage, onCommitted }: Props) => {
   const [file, setFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<RowError[]>([]);
   const [diff, setDiff] = useState<DiffItem[]>([]);
@@ -82,6 +82,7 @@ const ImportCard = ({ title, endpoint, template, allowDeactivate, successMessage
           successMessage ??
           `ایجاد: ${res.created ?? 0}، بروزرسانی: ${res.updated ?? 0}، غیرفعال: ${res.deactivated ?? 0}`,
       });
+      onCommitted?.(res);
       setFile(null);
       setConfirmDeactivate(false);
     }
