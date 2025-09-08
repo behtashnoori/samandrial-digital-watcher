@@ -29,13 +29,19 @@ const ImportCard = ({ title, endpoint, template, allowDeactivate, successMessage
   const [errors, setErrors] = useState<RowError[]>([]);
   const [diff, setDiff] = useState<DiffItem[]>([]);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
+  const [dryRunDone, setDryRunDone] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const f = e.dataTransfer.files[0];
-    if (f) setFile(f);
+    if (f) {
+      setFile(f);
+      setDryRunDone(false);
+      setErrors([]);
+      setDiff([]);
+    }
   };
 
   const submit = async (mode: "dry-run" | "commit") => {
@@ -66,9 +72,11 @@ const ImportCard = ({ title, endpoint, template, allowDeactivate, successMessage
         d.push({ status: "غیرفعال", code: c })
       );
       setDiff(d);
+      setDryRunDone(true);
     } else {
       setErrors([]);
       setDiff([]);
+      setDryRunDone(false);
       toast({
         description:
           successMessage ??
@@ -96,7 +104,13 @@ const ImportCard = ({ title, endpoint, template, allowDeactivate, successMessage
             ref={inputRef}
             type="file"
             className="hidden"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            onChange={(e) => {
+              const f = e.target.files?.[0] ?? null;
+              setFile(f);
+              setDryRunDone(false);
+              setErrors([]);
+              setDiff([]);
+            }}
           />
         </div>
         {allowDeactivate && (
@@ -148,7 +162,13 @@ const ImportCard = ({ title, endpoint, template, allowDeactivate, successMessage
       </CardContent>
       <CardFooter className="space-x-2 rtl:space-x-reverse">
         <Button type="button" onClick={() => submit("dry-run")}>Dry-run</Button>
-        <Button type="button" onClick={() => submit("commit")}>Commit</Button>
+        <Button
+          type="button"
+          onClick={() => submit("commit")}
+          disabled={!dryRunDone || errors.length > 0}
+        >
+          Commit
+        </Button>
         <Button type="button" variant="link" asChild>
           <a href={template} download>
             دانلود الگو
