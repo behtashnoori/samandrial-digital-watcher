@@ -20,4 +20,5 @@ from . import (
     notify,
     budget,
     dq,
+    reports,
 )  # noqa: F401

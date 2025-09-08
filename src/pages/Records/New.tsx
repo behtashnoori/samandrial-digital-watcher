@@ -42,7 +42,10 @@ const RecordForm = () => {
   const { token } = useParams();
   const navigate = useNavigate();
   const triggerIdParam = params.get("triggerId") ?? "";
-  const { data: tokenInfo } = useQuery({
+  const {
+    data: tokenInfo,
+    error: tokenErr,
+  } = useQuery({
     queryKey: ["token", token],
     queryFn: () => fetchToken(token!),
     enabled: !!token,
@@ -60,6 +63,7 @@ const RecordForm = () => {
     name: "actions",
   });
   const [files, setFiles] = useState<File[]>([]);
+  if (token && tokenErr) return <div>لینک نامعتبر یا استفاده‌شده است</div>;
 
   const onSubmit = async (values: FormValues) => {
     const res = await apiFetch<{ id: number }>("/api/responses", {

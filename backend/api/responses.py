@@ -3,10 +3,17 @@ from __future__ import annotations
 import hashlib
 import os
 import time
+import mimetypes
+from secrets import token_urlsafe
 from datetime import datetime
 
 from flask import current_app, jsonify, request
 from werkzeug.utils import secure_filename
+
+try:
+    import magic
+except Exception:  # pragma: no cover
+    magic = None
 
 from ..app import db
 from ..models import Attachment, AuditLog, Response, TriggerEvent, OneTimeToken
@@ -115,12 +122,13 @@ def upload_attachment(response_id: int):
     if file is None:
         return jsonify({'message': 'no file'}), 400
 
-    allowed_ext = {'.xlsx', '.pdf', '.jpg', '.jpeg', '.png'}
+    allowed_mimes = {
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/pdf',
+        'image/jpeg',
+        'image/png',
+    }
     filename = secure_filename(file.filename)
-    ext = os.path.splitext(filename)[1].lower()
-    if ext not in allowed_ext:
-        return jsonify({'message': 'invalid file type'}), 400
-
     existing = Attachment.query.filter_by(response_id=response_id).count()
     if existing >= 3:
         return jsonify({'message': 'max 3 attachments'}), 400
@@ -128,10 +136,13 @@ def upload_attachment(response_id: int):
     content = file.read()
     if len(content) > 5 * 1024 * 1024:
         return jsonify({'message': 'file too large'}), 400
+    mime = magic.from_buffer(content, mime=True) if magic else mimetypes.guess_type(filename)[0]
+    if mime not in allowed_mimes:
+        return jsonify({'message': 'invalid file type'}), 400
 
     storage_dir = os.path.join(current_app.root_path, 'storage')
     os.makedirs(storage_dir, exist_ok=True)
-    unique_name = f"{int(time.time())}_{filename}"
+    unique_name = f"{int(time.time())}_{token_urlsafe(8)}_{filename}"
     path = os.path.join(storage_dir, unique_name)
     with open(path, 'wb') as f:
         f.write(content)
@@ -142,6 +153,8 @@ def upload_attachment(response_id: int):
         uri=path,
         file_name=filename,
         sha256=sha256,
+        mime_type=mime,
+        size=len(content),
         uploaded_by=request.form.get('uploaded_by'),
     )
     db.session.add(attachment)

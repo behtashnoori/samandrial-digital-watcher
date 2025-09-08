@@ -56,11 +56,23 @@ let mockSettings = {
   due_hours: 24,
 };
 
+let mockTemplates = {
+  assign_rule: "random",
+  templates: [
+    { id: 1, name: "A", variant: "A", body_fa: "پیام A", status: "active" },
+    { id: 2, name: "B", variant: "B", body_fa: "پیام B", status: "active" },
+  ],
+};
+const mockStats = { A: 60, B: 40 };
+
 export const handlers = [
   http.post("/api/auth/login", async ({ request }) => {
     const { username, password } = await request.json();
     if (username === "didehban" && password === "secret") {
-      return HttpResponse.json({ username: "didehban", role: "admin" });
+      return HttpResponse.json(
+        { username: "didehban", role: "admin" },
+        { headers: { "set-cookie": "csrf_token=mock; Path=/" } },
+      );
     }
     return HttpResponse.json({ error: "ورود ناموفق" }, { status: 401 });
   }),
@@ -413,4 +425,16 @@ export const handlers = [
     mockSettings = { ...mockSettings, ...body };
     return HttpResponse.json(mockSettings);
   }),
+  http.get("/api/message-templates", () => HttpResponse.json(mockTemplates)),
+  http.post("/api/message-templates", async ({ request }) => {
+    const body = await request.json();
+    mockTemplates = { ...mockTemplates, ...body };
+    return HttpResponse.json({ status: "ok" });
+  }),
+  http.get("/api/message-templates/stats", () => HttpResponse.json(mockStats)),
+  http.get("/api/reports/weekly.xlsx", () =>
+    HttpResponse.text("mock", {
+      headers: { "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
+    }),
+  ),
 ];

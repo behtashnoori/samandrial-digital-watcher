@@ -4,7 +4,14 @@ export interface ApiError extends Error {
 }
 
 export async function apiFetch<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const res = await fetch(input, init);
+  const opts = init ? { ...init } : {};
+  opts.headers = opts.headers ? { ...opts.headers } : {};
+  const method = (opts.method || "GET").toUpperCase();
+  if (method !== "GET") {
+    const m = document.cookie.match(/csrf_token=([^;]+)/);
+    if (m) (opts.headers as Record<string, string>)["X-CSRFToken"] = m[1];
+  }
+  const res = await fetch(input, opts);
   const contentType = res.headers.get("content-type") ?? "";
   const data = contentType.includes("application/json") ? await res.json().catch(() => null) : null;
 

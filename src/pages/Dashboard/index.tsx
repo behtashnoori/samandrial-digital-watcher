@@ -51,8 +51,17 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
-      <div>
-        <h2 className="text-xl font-semibold mb-2">جمع‌بندی هفتگی</h2>
+      <div id="weekly-report" className="space-y-2">
+        <div className="flex justify-between items-center mb-2 print:flex">
+          <h2 className="text-xl font-semibold">جمع‌بندی هفتگی</h2>
+          <a
+            href="/api/reports/weekly.xlsx"
+            className="text-sm underline print:hidden"
+            target="_blank"
+          >
+            دانلود اکسل
+          </a>
+        </div>
         <div className="space-y-2">
           {data?.weekly.top_deviations.map((t, idx) => (
             <div key={idx} className="flex items-center gap-2 text-sm">

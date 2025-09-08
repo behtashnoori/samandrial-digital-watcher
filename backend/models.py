@@ -226,6 +226,8 @@ class Attachment(db.Model):
     uri: Mapped[str]
     file_name: Mapped[str]
     sha256: Mapped[str]
+    mime_type: Mapped[str | None]
+    size: Mapped[int | None]
     uploaded_by: Mapped[str | None]
     uploaded_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
@@ -242,6 +244,23 @@ class AuditLog(db.Model):
     actor: Mapped[str]
     at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     diff_json: Mapped[dict | None] = mapped_column(db.JSON)
+
+
+class MessageTemplate(db.Model):
+    __tablename__ = 'message_template'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
+    variant: Mapped[str]
+    body_fa: Mapped[str]
+    status: Mapped[str] = mapped_column(default='active')
+
+
+class TemplateAssign(db.Model):
+    __tablename__ = 'template_assign'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    rule: Mapped[str]
 
 
 class RecomputeJob(db.Model):
@@ -262,4 +281,5 @@ class OneTimeToken(db.Model):
     head_id: Mapped[int] = mapped_column(ForeignKey('head.id'))
     expires_at: Mapped[datetime]
     used_at: Mapped[datetime | None]
+    variant: Mapped[str | None]
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
