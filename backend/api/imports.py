@@ -551,9 +551,15 @@ def import_ops_actual() -> Response:
     if not file:
         return jsonify({"errors": [{"row": 0, "errors": ["no file"]}]}), 400
     rows, errors = _parse_ops_actual(file)
-    # validate service and unit existence
+    # validate service and unit existence and gather created/updated keys
     services = {s.code for s in Service.query.all()}
     units = {u.id for u in Unit.query.all()}
+    existing = {
+        (o.date.isoformat(), o.service_code, o.unit_id)
+        for o in OpsActualDaily.query.all()
+    }
+    created_keys: list[str] = []
+    updated_keys: list[str] = []
     for idx, row in enumerate(rows, start=2):
         row_errors: list[str] = []
         if row.get("service_code") not in services:
@@ -563,12 +569,22 @@ def import_ops_actual() -> Response:
             if uid not in units:
                 row_errors.append("unknown unit_id")
         except ValueError:
-            # unit_id format error already captured
             pass
         if row_errors:
             errors.append({"row": idx, "errors": row_errors})
-    if mode == "dry-run" or errors:
-        return jsonify({"errors": errors})
+        key = (
+            row.get("date_shamsi", "").replace("/", "-"),
+            row.get("service_code"),
+            int(row.get("unit_id", "0") or 0),
+        )
+        if key in existing:
+            updated_keys.append(f"{key[0]}-{key[1]}-{key[2]}")
+        else:
+            created_keys.append(f"{key[0]}-{key[1]}-{key[2]}")
+    if mode == "dry-run":
+        return jsonify({"errors": errors, "created": created_keys, "updated": updated_keys})
+    if errors:
+        return jsonify({"errors": errors}), 400
     created = updated = 0
     for row in rows:
         d = date.fromisoformat(row["date_shamsi"].replace("/", "-"))

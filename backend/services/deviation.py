@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Any
 
 from sqlalchemy import and_, or_
 
@@ -42,7 +42,7 @@ def _find_head(session, service_code: str, unit_id: int, day) -> int | None:
     return tenure.head_id if tenure else None
 
 
-def compute_deviations(session = db.session) -> int:
+def compute_deviations(session = db.session) -> tuple[int, list[dict[str, Any]]]:
     setting = session.query(Setting).first()
     threshold = (setting.threshold if setting else 10.0) / 100
     consecutive_days = setting.consecutive_days if setting else 2
@@ -65,6 +65,7 @@ def compute_deviations(session = db.session) -> int:
         .all()
     )
     created = 0
+    samples: list[dict[str, Any]] = []
     last_trigger: Dict[Tuple[str, int], None | tuple] = {}
     streak: Dict[Tuple[str, int], int] = {}
     last_date: Dict[Tuple[str, int], None | object] = {}
@@ -103,21 +104,30 @@ def compute_deviations(session = db.session) -> int:
         if streak[key] >= consecutive_days:
             head_id = _find_head(session, bd.service_code, bd.unit_id, bd.date)
             due_at = datetime.combine(bd.date, datetime.min.time()) + timedelta(hours=due_hours)
-            session.add(
-                TriggerEvent(
-                    date=bd.date,
-                    service_code=bd.service_code,
-                    unit_id=bd.unit_id,
-                    deviation_value=deviation * 100,
-                    severity="High",
-                    threshold_used=threshold * 100,
-                    status="open",
-                    assigned_head_id=head_id,
-                    due_at=due_at,
-                )
+            trig = TriggerEvent(
+                date=bd.date,
+                service_code=bd.service_code,
+                unit_id=bd.unit_id,
+                deviation_value=deviation * 100,
+                severity="High",
+                threshold_used=threshold * 100,
+                status="open",
+                assigned_head_id=head_id,
+                due_at=due_at,
             )
+            session.add(trig)
             created += 1
+            if len(samples) < 5:
+                samples.append(
+                    {
+                        "date": bd.date.isoformat(),
+                        "service_code": bd.service_code,
+                        "unit_id": bd.unit_id,
+                        "deviation_pct": deviation * 100,
+                        "assigned_head_id": head_id,
+                    }
+                )
             last_trigger[key] = bd.date + timedelta(days=cooldown_days)
             streak[key] = 0
     session.commit()
-    return created
+    return created, samples

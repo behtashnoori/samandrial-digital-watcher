@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 
 from ..app import db
 from ..models import (
@@ -16,8 +16,10 @@ from ..models import (
 )
 
 
-def compute_budget_daily(session=db.session, year: int = 1404) -> int:
-    """Distribute published annual budgets into daily records using month and day weights."""
+def compute_budget_daily(session=db.session, year: int = 1404) -> tuple[int, list[dict[str, Any]]]:
+    """Distribute published annual budgets into daily records using month and day weights.
+
+    Returns tuple of created row count and a small sample of inserted rows."""
 
     # fetch seasonality weights and normalize
     season_rows = session.query(SeasonalityMonth).all()
@@ -61,6 +63,7 @@ def compute_budget_daily(session=db.session, year: int = 1404) -> int:
     )
 
     created = 0
+    samples: list[dict[str, Any]] = []
     for b in budgets:
         for month in range(1, 13):
             month_share = month_factors.get(month, 0)
@@ -91,6 +94,11 @@ def compute_budget_daily(session=db.session, year: int = 1404) -> int:
                     rounded[order[idx]] += Decimal("0.01")
                     diff -= Decimal("0.01")
                     idx += 1
+                idx = 0
+                while diff < Decimal("0") and idx < len(order):
+                    rounded[order[idx]] -= Decimal("0.01")
+                    diff += Decimal("0.01")
+                    idx += 1
                 qty_values = rounded
 
             if b.annual_fin is not None:
@@ -102,22 +110,36 @@ def compute_budget_daily(session=db.session, year: int = 1404) -> int:
                     rounded[order[idx]] += Decimal("0.01")
                     diff -= Decimal("0.01")
                     idx += 1
+                idx = 0
+                while diff < Decimal("0") and idx < len(order):
+                    rounded[order[idx]] -= Decimal("0.01")
+                    diff += Decimal("0.01")
+                    idx += 1
                 fin_values = rounded
 
             for (day, _), q, f in zip(days, qty_values, fin_values):
-                session.add(
-                    BudgetDaily(
-                        date=day,
-                        service_code=b.service_code,
-                        unit_id=b.unit_id,
-                        qty=float(q) if q is not None else None,
-                        fin=float(f) if f is not None else None,
-                    )
+                entry = BudgetDaily(
+                    date=day,
+                    service_code=b.service_code,
+                    unit_id=b.unit_id,
+                    qty=float(q) if q is not None else None,
+                    fin=float(f) if f is not None else None,
                 )
+                session.add(entry)
                 created += 1
+                if len(samples) < 5:
+                    samples.append(
+                        {
+                            "date": day.isoformat(),
+                            "service_code": b.service_code,
+                            "unit_id": b.unit_id,
+                            "qty": entry.qty,
+                            "fin": entry.fin,
+                        }
+                    )
 
     session.query(TriggerEvent).filter(TriggerEvent.status == "open").update(
         {TriggerEvent.updated_by_new_budget: True}, synchronize_session=False
     )
     session.commit()
-    return created
+    return created, samples

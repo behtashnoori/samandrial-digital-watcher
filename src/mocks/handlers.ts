@@ -86,7 +86,16 @@ export const handlers = [
     triggers.forEach((t) => {
       t.updated = true;
     });
-    return HttpResponse.json({ processed: triggers.length });
+    return HttpResponse.json({
+      processed: triggers.length,
+      samples: triggers.slice(0, 3).map((t) => ({
+        date: t.date,
+        service_code: t.service_code,
+        unit_id: null,
+        qty: t.budget,
+        fin: null,
+      })),
+    });
   }),
   http.post("/api/compute/deviations", () => {
     triggers.forEach((t) => {
@@ -95,7 +104,10 @@ export const handlers = [
       const due = new Date(base.getTime() + mockSettings.due_hours * 3600000);
       t.due_at = due.toISOString();
     });
-    return HttpResponse.json({ created: triggers.length });
+    return HttpResponse.json({
+      created: triggers.length,
+      samples: triggers.slice(0, 3),
+    });
   }),
   http.post("/api/recompute", () => {
     triggers.forEach((t) => {
@@ -163,7 +175,11 @@ export const handlers = [
   http.post("/api/import/ops-actual", ({ request }) => {
     const mode = new URL(request.url).searchParams.get("mode");
     if (mode === "dry-run") {
-      return HttpResponse.json({ errors: [] });
+      return HttpResponse.json({
+        errors: [],
+        created: ["1404-01-01-S1-1"],
+        updated: [],
+      });
     }
     return HttpResponse.json({ created: 1, updated: 0, deactivated: 0 });
   }),

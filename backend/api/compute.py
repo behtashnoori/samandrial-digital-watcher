@@ -9,14 +9,14 @@ from ..services.recompute import run_recompute_jobs
 
 @api_bp.post("/compute/budget-daily")
 def compute_budget_daily_endpoint():
-    processed = compute_budget_daily(db.session)
-    return jsonify({"processed": processed})
+    processed, samples = compute_budget_daily(db.session)
+    return jsonify({"processed": processed, "samples": samples})
 
 
 @api_bp.post("/compute/deviations")
 def compute_deviations_endpoint():
-    created = compute_deviations(db.session)
-    return jsonify({"created": created})
+    created, samples = compute_deviations(db.session)
+    return jsonify({"created": created, "samples": samples})
 
 
 @api_bp.post("/recompute")
