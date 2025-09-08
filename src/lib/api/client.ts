@@ -21,3 +21,13 @@ export async function apiFetch<T>(input: RequestInfo, init?: RequestInit): Promi
   }
   return data as T;
 }
+
+export const apiClient = {
+  get: <T>(url: string) => apiFetch<T>(url),
+  post: <T>(url: string, body: unknown) =>
+    apiFetch<T>(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+};

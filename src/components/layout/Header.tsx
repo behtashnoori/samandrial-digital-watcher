@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface HeaderProps {
   user: {
@@ -17,6 +18,7 @@ interface HeaderProps {
 }
 
 export function Header({ user }: HeaderProps) {
+  const { logout } = useAuth();
   return (
     <header className="h-16 bg-card border-b border-border px-6 flex items-center justify-between">
       {/* Logo and Title */}
@@ -55,7 +57,7 @@ export function Header({ user }: HeaderProps) {
             <span>تنظیمات</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
+          <DropdownMenuItem onSelect={logout}>
             <LogOut className="ml-2 h-4 w-4" />
             <span>خروج</span>
           </DropdownMenuItem>

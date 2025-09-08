@@ -55,6 +55,13 @@ let mockSettings = {
 };
 
 export const handlers = [
+  http.post("/api/auth/login", async ({ request }) => {
+    const { username, password } = await request.json();
+    if (username === "didehban" && password === "secret") {
+      return HttpResponse.json({ username: "didehban", role: "admin" });
+    }
+    return HttpResponse.json({ error: "ورود ناموفق" }, { status: 401 });
+  }),
   http.get("/api/dashboard", () =>
     HttpResponse.json({
       open_triggers: triggers.length,

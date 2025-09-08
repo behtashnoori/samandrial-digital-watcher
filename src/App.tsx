@@ -12,29 +12,84 @@ import Records from "@/pages/Records";
 import RecordForm from "@/pages/Records/New";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
+import Login from "@/pages/Login";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<AppLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="triggers" element={<Triggers />} />
-            <Route path="import" element={<ImportCenter />} />
-            <Route path="organization" element={<OrgStructure />} />
-            <Route path="records" element={<Records />} />
-            <Route path="records/new" element={<RecordForm />} />
-            <Route path="settings" element={<Settings />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+              <Route
+                path="triggers"
+                element={
+                  <ProtectedRoute roles={["admin", "manager", "head"]}>
+                    <Triggers />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="import"
+                element={
+                  <ProtectedRoute roles={["admin"]}>
+                    <ImportCenter />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="organization"
+                element={
+                  <ProtectedRoute roles={["admin"]}>
+                    <OrgStructure />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="records"
+                element={
+                  <ProtectedRoute roles={["admin", "manager", "head", "viewer"]}>
+                    <Records />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="records/new"
+                element={
+                  <ProtectedRoute roles={["admin", "manager", "head"]}>
+                    <RecordForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="settings"
+                element={
+                  <ProtectedRoute roles={["admin"]}>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+            <Route path="/login" element={<Login />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

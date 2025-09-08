@@ -8,6 +8,15 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .app import db
 
 
+class User(db.Model):
+    __tablename__ = 'user'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(unique=True)
+    password_hash: Mapped[str]
+    role: Mapped[str]
+
+
 class Service(db.Model):
     __tablename__ = 'service'
 

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from pathlib import Path
+import os
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from sqlalchemy import event
+from werkzeug.security import generate_password_hash
 
 
 db = SQLAlchemy()
@@ -30,6 +32,16 @@ def create_app() -> Flask:
 
     with app.app_context():
         event.listen(db.engine, 'connect', lambda conn, _: conn.execute('PRAGMA journal_mode=WAL'))
+        from .models import User
+        if not User.query.filter_by(username='didehban').first():
+            pwd = os.environ.get('ADMIN_PASSWORD', 'admin')
+            user = User(
+                username='didehban',
+                password_hash=generate_password_hash(pwd),
+                role='admin',
+            )
+            db.session.add(user)
+            db.session.commit()
 
     return app
 

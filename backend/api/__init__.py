@@ -7,4 +7,14 @@ def ping() -> tuple[dict[str, str], int]:
     return jsonify({'status': 'ok'}), 200
 
 
-from . import compute, imports, org, responses, settings, triggers, dashboard, rag  # noqa: F401
+from . import (
+    compute,
+    imports,
+    org,
+    responses,
+    settings,
+    triggers,
+    dashboard,
+    rag,
+    auth,
+)  # noqa: F401
