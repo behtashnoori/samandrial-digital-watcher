@@ -179,6 +179,7 @@ export default function ServiceAssignmentTab() {
                 {managementName && ` - ${managementName}`}
                 {unitName && ` - ${unitName}`}
                 {headName && ` - ${headName}`}
+                {" "}({s.valid_from} تا {s.valid_to ?? "نامحدود"})
               </span>
               <Button variant="ghost" size="sm" onClick={() => form.reset({ ...s, id: s.id })}>
                 ویرایش

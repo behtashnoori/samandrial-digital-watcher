@@ -118,6 +118,7 @@ export default function TenureTab() {
           <li key={t.id} className="flex items-center gap-2">
             <span className="flex-1">
               {headMap[t.head_id] ?? t.head_id} → {unitMap[t.unit_id] ?? t.unit_id}
+              {" "}({t.valid_from} تا {t.valid_to ?? "نامحدود"})
             </span>
             <Button variant="ghost" size="sm" onClick={() => form.reset({ ...t, id: t.id })}>
               ویرایش
